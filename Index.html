@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AI Crop Recommendation System</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --soil: #2C1A0E;
+    --bark: #4A2E1A;
+    --moss: #3D6B35;
+    --leaf: #5A9E4B;
+    --sprout: #8BC34A;
+    --gold: #D4A017;
+    --sun: #F5C842;
+    --cream: #FDF6E3;
+    --sand: #E8D9B5;
+    --mist: #F0EDE6;
+    --text: #1C1009;
+    --subtext: #6B4E2A;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--soil);
+    min-height: 100vh;
+    color: var(--text);
+    overflow-x: hidden;
+  }
+
+  /* BACKGROUND */
+  .bg-field {
+    position: fixed; inset: 0; z-index: 0;
+    background: 
+      radial-gradient(ellipse at 20% 80%, rgba(61,107,53,0.25) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 20%, rgba(212,160,23,0.15) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 50%, rgba(74,46,26,0.5) 0%, transparent 80%),
+      var(--soil);
+  }
+  .bg-field::after {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%235A9E4B' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  }
+
+  .app-shell {
+    position: relative; z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  /* HEADER */
+  header {
+    text-align: center;
+    padding: 2.5rem 0 2rem;
+  }
+  .logo-icon {
+    font-size: 3.5rem;
+    display: block;
+    margin-bottom: 0.5rem;
+    filter: drop-shadow(0 4px 16px rgba(90,158,75,0.4));
+    animation: sway 3s ease-in-out infinite;
+  }
+  @keyframes sway {
+    0%,100% { transform: rotate(-3deg); }
+    50% { transform: rotate(3deg); }
+  }
+  header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.8rem, 5vw, 3rem);
+    font-weight: 900;
+    color: var(--sun);
+    letter-spacing: -0.02em;
+    text-shadow: 0 2px 20px rgba(245,200,66,0.3);
+    line-height: 1.1;
+  }
+  header p {
+    color: var(--sand);
+    font-size: 0.95rem;
+    margin-top: 0.5rem;
+    opacity: 0.8;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .algo-badge {
+    display: inline-block;
+    margin-top: 0.75rem;
+    background: linear-gradient(135deg, var(--moss), var(--leaf));
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.3rem 0.9rem;
+    border-radius: 999px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    box-shadow: 0 4px 12px rgba(61,107,53,0.4);
+  }
+
+  /* CARD */
+  .card {
+    background: var(--cream);
+    border-radius: 20px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.35), 0 1px 0 rgba(255,255,255,0.1) inset;
+    border: 1px solid rgba(212,160,23,0.15);
+    animation: slideUp 0.5s ease both;
+  }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .card-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--bark);
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .card-title span { font-size: 1.3rem; }
+
+  /* BUDGET */
+  .budget-wrap {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .budget-label {
+    font-size: 1.5rem;
+    font-weight: 300;
+    color: var(--subtext);
+    flex-shrink: 0;
+  }
+  .budget-input-wrap {
+    position: relative;
+    flex: 1;
+    min-width: 180px;
+  }
+  .budget-input-wrap .currency {
+    position: absolute;
+    left: 14px; top: 50%;
+    transform: translateY(-50%);
+    font-weight: 600;
+    color: var(--gold);
+    font-size: 1.1rem;
+  }
+  .budget-input-wrap input {
+    width: 100%;
+    padding: 0.75rem 1rem 0.75rem 2.2rem;
+    border: 2px solid var(--sand);
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    background: white;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .budget-input-wrap input:focus { border-color: var(--leaf); }
+
+  /* RANGE SLIDER */
+  .slider-wrap { margin-top: 1rem; }
+  .slider-labels { display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--subtext); margin-bottom: 0.3rem; }
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 100%; height: 6px;
+    border-radius: 999px;
+    background: linear-gradient(to right, var(--leaf) 0%, var(--leaf) var(--pct, 20%), var(--sand) var(--pct, 20%), var(--sand) 100%);
+    outline: none; cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--gold);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+  input[type=range]::-webkit-slider-thumb:active { transform: scale(1.2); }
+
+  /* CROP FORM */
+  .crops-list { display: flex; flex-direction: column; gap: 1rem; }
+
+  .crop-row {
+    background: white;
+    border: 1.5px solid var(--sand);
+    border-radius: 14px;
+    padding: 1rem 1.25rem;
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr auto;
+    gap: 0.75rem;
+    align-items: center;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    animation: fadeIn 0.3s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
+  .crop-row:hover { border-color: var(--leaf); box-shadow: 0 2px 12px rgba(90,158,75,0.1); }
+
+  .crop-row label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--subtext);
+    display: block;
+    margin-bottom: 0.3rem;
+  }
+  .crop-row input {
+    width: 100%;
+    padding: 0.55rem 0.75rem;
+    border: 1.5px solid #e0d8c8;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    color: var(--text);
+    background: var(--mist);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .crop-row input:focus { border-color: var(--leaf); background: white; }
+
+  .profit-input-wrap, .cost-input-wrap { position: relative; }
+  .profit-input-wrap .sym, .cost-input-wrap .sym {
+    position: absolute; left: 8px; top: 50%; transform: translateY(-50%);
+    color: var(--gold); font-weight: 600; font-size: 0.85rem; pointer-events: none;
+  }
+  .profit-input-wrap input, .cost-input-wrap input { padding-left: 1.5rem; }
+
+  .roi-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.2rem 0.5rem;
+    border-radius: 6px;
+    text-align: center;
+    min-width: 52px;
+  }
+  .roi-good { background: #e6f4e1; color: #2d6b24; }
+  .roi-ok   { background: #fff8e1; color: #7a5800; }
+  .roi-bad  { background: #fde8e8; color: #9b1c1c; }
+
+  .btn-remove {
+    background: none; border: none; cursor: pointer;
+    color: #ccc; font-size: 1.2rem;
+    padding: 0.3rem; border-radius: 6px;
+    transition: color 0.2s, background 0.2s;
+    line-height: 1;
+  }
+  .btn-remove:hover { color: #e53e3e; background: #fff0f0; }
+
+  /* BUTTONS */
+  .btn {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    padding: 0.7rem 1.4rem;
+    border-radius: 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .btn:active { transform: scale(0.97); }
+
+  .btn-add {
+    background: var(--mist);
+    color: var(--moss);
+    border: 2px dashed var(--leaf);
+    width: 100%;
+    justify-content: center;
+    margin-top: 0.5rem;
+    padding: 0.85rem;
+  }
+  .btn-add:hover { background: #e8f5e2; }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--moss) 0%, var(--leaf) 100%);
+    color: white;
+    box-shadow: 0 4px 20px rgba(61,107,53,0.4);
+    padding: 0.9rem 2rem;
+    font-size: 1rem;
+    border-radius: 14px;
+    width: 100%;
+    justify-content: center;
+  }
+  .btn-primary:hover { box-shadow: 0 6px 28px rgba(61,107,53,0.5); transform: translateY(-1px); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .btn-reset {
+    background: transparent;
+    color: var(--subtext);
+    border: 1.5px solid var(--sand);
+    font-size: 0.82rem;
+    padding: 0.5rem 1rem;
+  }
+  .btn-reset:hover { background: var(--sand); }
+
+  /* ACTIONS ROW */
+  .actions { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+  .actions .btn-primary { flex: 1; }
+
+  /* PRESETS */
+  .presets-row {
+    display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem;
+  }
+  .preset-btn {
+    padding: 0.35rem 0.85rem;
+    border-radius: 999px;
+    background: var(--mist);
+    border: 1.5px solid var(--sand);
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    color: var(--subtext);
+    transition: all 0.15s;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .preset-btn:hover { background: var(--sand); color: var(--bark); border-color: var(--bark); }
+
+  /* RESULTS */
+  #results { display: none; }
+
+  .result-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;
+  }
+
+  .stat-pills { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+  .stat-pill {
+    background: white;
+    border: 1.5px solid var(--sand);
+    border-radius: 12px;
+    padding: 0.6rem 1rem;
+    text-align: center;
+    min-width: 110px;
+  }
+  .stat-pill .val {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--moss);
+    display: block;
+  }
+  .stat-pill .lbl {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--subtext);
+  }
+
+  .result-crops { display: flex; flex-direction: column; gap: 0.75rem; }
+
+  .result-crop {
+    background: white;
+    border-left: 4px solid var(--leaf);
+    border-radius: 10px;
+    padding: 0.9rem 1.25rem;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 1rem; flex-wrap: wrap;
+    animation: slideRight 0.4s ease both;
+  }
+  @keyframes slideRight {
+    from { opacity: 0; transform: translateX(-12px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  .result-crop-name {
+    font-weight: 600; font-size: 1rem; color: var(--bark);
+    display: flex; align-items: center; gap: 0.4rem;
+  }
+  .result-crop-stats { display: flex; gap: 1.25rem; flex-wrap: wrap; }
+  .result-crop-stats .fig { font-size: 0.82rem; color: var(--subtext); }
+  .result-crop-stats .fig strong { color: var(--text); }
+
+  /* DP TABLE */
+  .dp-section { margin-top: 1.5rem; }
+  .dp-toggle {
+    background: none; border: none; cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem; font-weight: 600;
+    color: var(--moss);
+    display: flex; align-items: center; gap: 0.4rem;
+    padding: 0.5rem 0;
+  }
+  .dp-table-wrap { overflow-x: auto; margin-top: 0.75rem; display: none; }
+  .dp-table {
+    border-collapse: collapse;
+    font-size: 0.75rem;
+    width: 100%;
+  }
+  .dp-table th, .dp-table td {
+    border: 1px solid var(--sand);
+    padding: 0.35rem 0.55rem;
+    text-align: center;
+    min-width: 36px;
+  }
+  .dp-table th { background: var(--mist); font-weight: 700; color: var(--bark); }
+  .dp-table .highlight { background: #d4edda; font-weight: 700; color: var(--moss); }
+  .dp-table .selected-row { background: #fff3cd; }
+
+  /* CHART BAR */
+  .bar-chart { margin-top: 1.5rem; }
+  .bar-item { margin-bottom: 0.6rem; }
+  .bar-label { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 0.25rem; color: var(--subtext); }
+  .bar-label strong { color: var(--bark); }
+  .bar-track { background: var(--sand); border-radius: 999px; height: 10px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--moss), var(--sprout)); transition: width 1s ease; }
+
+  /* REMAINING BUDGET */
+  .budget-remain {
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .budget-remain.ok { background: #e6f4e1; color: #2d6b24; }
+  .budget-remain.warn { background: #fff8e1; color: #7a5800; }
+
+  /* EMPTY STATE */
+  .empty-state {
+    text-align: center;
+    padding: 2rem;
+    color: var(--subtext);
+    font-size: 0.9rem;
+  }
+  .empty-state .big { font-size: 2.5rem; margin-bottom: 0.5rem; }
+
+  /* NO RESULT */
+  .no-result {
+    text-align: center; padding: 1.5rem;
+    background: #fff8e1; border-radius: 12px;
+    color: #7a5800; font-weight: 500;
+  }
+
+  /* FOOTER */
+  footer {
+    text-align: center;
+    padding: 2rem 0 0;
+    color: rgba(255,255,255,0.25);
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+  }
+
+  /* RESPONSIVE */
+  @media(max-width: 600px) {
+    .crop-row { grid-template-columns: 1fr 1fr; grid-template-rows: auto auto auto; }
+    .crop-row > div:first-child { grid-column: 1/-1; }
+    .btn-remove { grid-column: 2; justify-self: end; }
+    .roi-badge { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-field"></div>
+
+<div class="app-shell">
+
+  <header>
+    <span class="logo-icon">🌾</span>
+    <h1>AI Crop Recommendation<br>System</h1>
+    <p>Optimize your harvest with intelligence</p>
+    <span class="algo-badge">⚙ Dynamic Programming · 0/1 Knapsack</span>
+  </header>
+
+  <!-- BUDGET CARD -->
+  <div class="card" style="animation-delay:0.05s">
+    <div class="card-title"><span>💰</span> Set Your Budget</div>
+    <div class="budget-wrap">
+      <div class="budget-label">₹</div>
+      <div class="budget-input-wrap">
+        <input type="number" id="budgetInput" value="10000" min="100" max="500000" step="100" oninput="syncSlider(this.value)"/>
+      </div>
+    </div>
+    <div class="slider-wrap">
+      <div class="slider-labels"><span>₹1,000</span><span>₹2,50,000</span><span>₹5,00,000</span></div>
+      <input type="range" id="budgetSlider" min="1000" max="500000" value="10000" step="500" oninput="syncInput(this.value)"/>
+    </div>
+  </div>
+
+  <!-- CROPS CARD -->
+  <div class="card" style="animation-delay:0.1s">
+    <div class="card-title"><span>🌱</span> Crop Portfolio</div>
+
+    <div class="presets-row">
+      <span style="font-size:0.8rem;color:var(--subtext);align-self:center;">Quick load:</span>
+      <button class="preset-btn" onclick="loadPreset('kharif')">☀ Kharif Crops</button>
+      <button class="preset-btn" onclick="loadPreset('rabi')">❄ Rabi Crops</button>
+      <button class="preset-btn" onclick="loadPreset('cash')">💵 Cash Crops</button>
+    </div>
+
+    <div class="crops-list" id="cropsList"></div>
+    <button class="btn btn-add" onclick="addCropRow()">＋ Add Crop</button>
+  </div>
+
+  <!-- ACTION -->
+  <div class="card" style="animation-delay:0.15s;padding:1.25rem 1.5rem;">
+    <div class="actions">
+      <button class="btn btn-primary" id="runBtn" onclick="runKnapsack()">
+        🧠 Find Best Crops
+      </button>
+      <button class="btn btn-reset" onclick="resetAll()">↺ Reset</button>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results">
+    <div class="card" style="animation-delay:0s">
+      <div class="result-header">
+        <div class="card-title" style="margin:0"><span>✅</span> Recommended Crops</div>
+        <div class="stat-pills" id="statPills"></div>
+      </div>
+      <div id="resultCrops"></div>
+      <div id="budgetRemain"></div>
+
+      <div class="bar-chart" id="barChart"></div>
+
+      <div class="dp-section">
+        <button class="dp-toggle" onclick="toggleDP()">
+          📊 <span id="dpToggleText">Show DP Table</span>
+        </button>
+        <div class="dp-table-wrap" id="dpTableWrap"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer>CCC · AI Crop Recommendation System · Dynamic Programming</footer>
+</div>
+
+<script>
+// ─── DATA ───────────────────────────────────────────────────────────────────
+const PRESETS = {
+  kharif: [
+    { name: "Rice",        cost: 3000, profit: 5500 },
+    { name: "Maize",       cost: 2000, profit: 4000 },
+    { name: "Cotton",      cost: 4000, profit: 7000 },
+    { name: "Soybean",     cost: 1500, profit: 2800 },
+    { name: "Groundnut",   cost: 2500, profit: 4500 },
+  ],
+  rabi: [
+    { name: "Wheat",       cost: 2500, profit: 4200 },
+    { name: "Mustard",     cost: 1800, profit: 3200 },
+    { name: "Chickpea",    cost: 2200, profit: 3800 },
+    { name: "Barley",      cost: 1200, profit: 2000 },
+    { name: "Peas",        cost: 1600, profit: 2600 },
+  ],
+  cash: [
+    { name: "Sugarcane",   cost: 5000, profit: 9000 },
+    { name: "Tobacco",     cost: 4500, profit: 7500 },
+    { name: "Jute",        cost: 2000, profit: 3500 },
+    { name: "Sunflower",   cost: 1800, profit: 3200 },
+    { name: "Turmeric",    cost: 3500, profit: 6500 },
+  ]
+};
+
+let cropIdCounter = 0;
+
+// ─── BUDGET SYNC ────────────────────────────────────────────────────────────
+function syncSlider(v) {
+  const slider = document.getElementById('budgetSlider');
+  slider.value = Math.min(Math.max(v, 1000), 500000);
+  updateSliderFill(slider);
+}
+function syncInput(v) {
+  document.getElementById('budgetInput').value = v;
+  updateSliderFill(document.getElementById('budgetSlider'));
+}
+function updateSliderFill(slider) {
+  const min = +slider.min, max = +slider.max, val = +slider.value;
+  const pct = ((val - min) / (max - min)) * 100;
+  slider.style.setProperty('--pct', pct + '%');
+}
+updateSliderFill(document.getElementById('budgetSlider'));
+
+// ─── CROP ROWS ───────────────────────────────────────────────────────────────
+function addCropRow(crop = null) {
+  const id = cropIdCounter++;
+  const name   = crop ? crop.name   : '';
+  const cost   = crop ? crop.cost   : '';
+  const profit = crop ? crop.profit : '';
+
+  const row = document.createElement('div');
+  row.className = 'crop-row';
+  row.id = 'crop-' + id;
+  row.innerHTML = `
+    <div>
+      <label>Crop Name</label>
+      <input type="text" placeholder="e.g. Wheat" value="${name}" class="crop-name"/>
+    </div>
+    <div class="cost-input-wrap">
+      <label>Cost (₹)</label>
+      <span class="sym">₹</span>
+      <input type="number" placeholder="2000" value="${cost}" min="1" class="crop-cost" oninput="updateROI('${id}')"/>
+    </div>
+    <div class="profit-input-wrap">
+      <label>Profit (₹)</label>
+      <span class="sym">₹</span>
+      <input type="number" placeholder="4000" value="${profit}" min="1" class="crop-profit" oninput="updateROI('${id}')"/>
+    </div>
+    <div>
+      <label>ROI</label>
+      <div class="roi-badge roi-ok" id="roi-${id}">—</div>
+    </div>
+    <button class="btn-remove" onclick="removeCrop('${id}')" title="Remove">✕</button>
+  `;
+  document.getElementById('cropsList').appendChild(row);
+  if (crop) updateROI(id);
+}
+
+function updateROI(id) {
+  const row    = document.getElementById('crop-' + id);
+  if (!row) return;
+  const cost   = +row.querySelector('.crop-cost').value;
+  const profit = +row.querySelector('.crop-profit').value;
+  const badge  = document.getElementById('roi-' + id);
+  if (!cost || !profit) { badge.textContent = '—'; badge.className = 'roi-badge roi-ok'; return; }
+  const roi = ((profit - cost) / cost * 100).toFixed(0);
+  badge.textContent = roi + '%';
+  badge.className   = roi >= 50 ? 'roi-badge roi-good' : roi >= 0 ? 'roi-badge roi-ok' : 'roi-badge roi-bad';
+}
+
+function removeCrop(id) {
+  const el = document.getElementById('crop-' + id);
+  if (el) el.remove();
+}
+
+function loadPreset(key) {
+  document.getElementById('cropsList').innerHTML = '';
+  cropIdCounter = 0;
+  PRESETS[key].forEach(c => addCropRow(c));
+}
+
+function resetAll() {
+  d
