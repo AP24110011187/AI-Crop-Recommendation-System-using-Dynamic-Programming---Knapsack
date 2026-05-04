@@ -1,0 +1,7 @@
+[
+  { "name": "Rice",      "cost": 3000, "profit": 5500 },
+  { "name": "Maize",     "cost": 2000, "profit": 4000 },
+  { "name": "Cotton",    "cost": 4000, "profit": 7000 },
+  { "name": "Soybean",   "cost": 1500, "profit": 2800 },
+  { "name": "Groundnut", "cost": 2500, "profit": 4500 }
+]
